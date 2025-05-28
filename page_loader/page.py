@@ -1,8 +1,11 @@
+import logging
 import os
 import re
 from urllib.parse import urlparse
 
 import requests
+
+logging.basicConfig(level=logging.INFO)
 
 
 def formate_filename(url: str) -> str:
@@ -12,14 +15,21 @@ def formate_filename(url: str) -> str:
     return f"{formatted_filename}.html"
 
 
-def download(url, dir_path):
-    response = requests.get(url)
+def download(url, dir_path=os.getcwd()):
+    logging.info(f"requested url: {url}")
+    logging.info(f"output path: {dir_path}")
+
+    response = requests.get(url, timeout=(3, 10))
     response.raise_for_status()
 
     filename = formate_filename(url)
+    if not os.path.isdir(dir_path):
+        raise NotADirectoryError(f"{dir_path} is not a directory")
     filepath = os.path.join(dir_path, filename)
 
     with open(filepath, "w") as file:
         file.write(response.text)
+
+    logging.info(f"write html file: {filepath}")
 
     return filepath

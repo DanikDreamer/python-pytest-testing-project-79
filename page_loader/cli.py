@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from page_loader import download
+from page_loader.page import download
 
 
 def main():
@@ -12,7 +12,7 @@ def main():
 
     try:
         file_path = download(args.url, args.output)
-        print(file_path)
+        print(f"Page was downloaded as '{file_path}'")
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit()
