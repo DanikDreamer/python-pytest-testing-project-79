@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from page_loader.page import download
+from page_loader import download
 
 
 def main():

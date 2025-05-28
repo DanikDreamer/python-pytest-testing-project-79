@@ -3,7 +3,7 @@ import os
 import pytest
 from requests.exceptions import ConnectionError, HTTPError
 
-from page_loader.page import download
+from page_loader import download
 
 
 def read(file_path):
@@ -56,8 +56,8 @@ def test_page_load(requests_mock, tmp_path, expected_content):
     file_path = download(url, tmp_path)
 
     expected_file_path = os.path.join(tmp_path, "site-com-blog-about.html")
-    actual = read(expected_file_path)
+    actual_content = read(file_path)
 
     assert file_path == expected_file_path
     assert os.path.exists(file_path)
-    assert actual == expected_content
+    assert actual_content == expected_content
