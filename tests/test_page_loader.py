@@ -1,24 +1,24 @@
 import os
 
 import pytest
+from bs4 import BeautifulSoup
 from requests.exceptions import ConnectionError, HTTPError
 
 from page_loader import download
 
 
-def read(file_path):
-    with open(file_path, "r") as f:
-        result = f.read()
-    return result
+def read(file_path, binary=False):
+    mode = "rb" if binary else "r"
+    with open(file_path, mode) as f:
+        return f.read()
 
 
 def get_test_data_path(name):
     return os.path.join("tests/test_data", name)
 
 
-@pytest.fixture(scope="module")
-def expected_content():
-    return read(get_test_data_path("index.html"))
+def normalize_html(html_str):
+    return BeautifulSoup(html_str, "html.parser").prettify()
 
 
 def test_connection_error(requests_mock, tmp_path):
@@ -50,14 +50,25 @@ def test_storage_errors(requests_mock, tmp_path):
         download(url, f"{tmp_path}/notExistsPath")
 
 
-def test_page_load(requests_mock, tmp_path, expected_content):
-    url = "https://site.com/blog/about"
-    requests_mock.get(url, text=expected_content)
-    file_path = download(url, tmp_path)
+def test_page_load(requests_mock, tmp_path):
+    url = "https://ru.hexlet.io/courses"
+    asset_url = "https://ru.hexlet.io/assets/professions/python.png"
+    assets_dir = tmp_path / "ru-hexlet-io-courses_files"
+    asset_filename = "ru-hexlet-io-assets-professions-python.png"
+    asset_path = assets_dir / asset_filename
 
-    expected_file_path = os.path.join(tmp_path, "site-com-blog-about.html")
-    actual_content = read(file_path)
+    html_before = read(get_test_data_path("before.html"))
+    requests_mock.get(url, text=html_before)
 
-    assert file_path == expected_file_path
-    assert os.path.exists(file_path)
-    assert actual_content == expected_content
+    asset_data = read(get_test_data_path("logo.png"), binary=True)
+    requests_mock.get(asset_url, content=asset_data)
+
+    downloaded_html_page = download(url, tmp_path)
+
+    expected_html = read(get_test_data_path("after.html"))
+    actual_html = read(downloaded_html_page)
+
+    assert os.path.exists(downloaded_html_page)
+    assert normalize_html(actual_html) == normalize_html(expected_html)
+    assert os.path.exists(asset_path)
+    assert read(asset_path, binary=True) == asset_data
