@@ -22,7 +22,7 @@ handler.setFormatter(formatter)
 logger.handlers = [handler]
 
 
-def formate_filename(url: str) -> str:
+def format_filename(url: str) -> str:
     parsed = urlparse(url)
     path = f"{parsed.netloc}{parsed.path}"
     name, ext = os.path.splitext(path)
@@ -39,13 +39,10 @@ def is_local(src_url, page_url):
 
 
 def download_resource(resource_url, output_path):
-    try:
-        response = requests.get(resource_url, timeout=(3, 10))
-        response.raise_for_status()
-        with open(output_path, "wb") as file:
-            file.write(response.content)
-    except requests.RequestException as e:
-        logging.error(f"error downloading {resource_url}: {e}")
+    response = requests.get(resource_url, timeout=(3, 10))
+    response.raise_for_status()
+    with open(output_path, "wb") as file:
+        file.write(response.content)
 
 
 def download(url, dir_path=os.getcwd()):
@@ -57,7 +54,7 @@ def download(url, dir_path=os.getcwd()):
 
     if not os.path.isdir(dir_path):
         raise NotADirectoryError(f"{dir_path} is not a directory")
-    filename = formate_filename(url)
+    filename = format_filename(url)
     html_path = os.path.join(dir_path, filename)
 
     with open(html_path, "w") as file:
@@ -70,11 +67,11 @@ def download(url, dir_path=os.getcwd()):
     logging.info(f"create directory for assets: {assets_dir}")
 
     soup = BeautifulSoup(response.text, "html.parser")
-    resoure_tags = soup.find_all(["img", "script", "link"])
+    resource_tags = soup.find_all(["img", "script", "link"])
 
     local_tags = [
         tag
-        for tag in resoure_tags
+        for tag in resource_tags
         if (resource_url := tag.get("src" if tag.name in ["img", "script"] else "href"))
         and is_local(resource_url, url)
     ]
@@ -89,7 +86,7 @@ def download(url, dir_path=os.getcwd()):
         resource_url = tag.get(attr)
 
         full_url = urljoin(url, resource_url)
-        asset_filename = formate_filename(full_url)
+        asset_filename = format_filename(full_url)
         asset_path = os.path.join(assets_dir, asset_filename)
 
         download_resource(full_url, asset_path)
