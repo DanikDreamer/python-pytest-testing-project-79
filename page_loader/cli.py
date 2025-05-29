@@ -4,7 +4,8 @@ import sys
 
 from page_loader import download
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def main():

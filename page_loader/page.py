@@ -1,12 +1,25 @@
 import logging
 import os
 import re
+import sys
 from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from tqdm import tqdm
 
-logging.basicConfig(level=logging.INFO)
+
+class TqdmLoggingHandler(logging.Handler):
+    def emit(self, record):
+        msg = self.format(record)
+        tqdm.write(msg, file=sys.stderr)
+
+
+logger = logging.getLogger()
+formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
+handler = TqdmLoggingHandler()
+handler.setFormatter(formatter)
+logger.handlers = [handler]
 
 
 def formate_filename(url: str) -> str:
@@ -26,10 +39,13 @@ def is_local(src_url, page_url):
 
 
 def download_resource(resource_url, output_path):
-    response = requests.get(resource_url, timeout=(3, 10))
-    response.raise_for_status()
-    with open(output_path, "wb") as file:
-        file.write(response.content)
+    try:
+        response = requests.get(resource_url, timeout=(3, 10))
+        response.raise_for_status()
+        with open(output_path, "wb") as file:
+            file.write(response.content)
+    except requests.RequestException as e:
+        logging.error(f"error downloading {resource_url}: {e}")
 
 
 def download(url, dir_path=os.getcwd()):
@@ -56,12 +72,21 @@ def download(url, dir_path=os.getcwd()):
     soup = BeautifulSoup(response.text, "html.parser")
     resoure_tags = soup.find_all(["img", "script", "link"])
 
-    for tag in resoure_tags:
+    local_tags = [
+        tag
+        for tag in resoure_tags
+        if (resource_url := tag.get("src" if tag.name in ["img", "script"] else "href"))
+        and is_local(resource_url, url)
+    ]
+
+    for tag in tqdm(
+        local_tags,
+        desc="Downloading:",
+        ncols=60,
+        bar_format="{desc} |{bar}| {percentage:3.1f}% (eta: {remaining_s:.0f})",
+    ):
         attr = "src" if tag.name in ["img", "script"] else "href"
         resource_url = tag.get(attr)
-
-        if not resource_url or not is_local(resource_url, url):
-            continue
 
         full_url = urljoin(url, resource_url)
         asset_filename = formate_filename(full_url)
