@@ -13,7 +13,7 @@ def formate_filename(url: str) -> str:
     parsed = urlparse(url)
     path = f"{parsed.netloc}{parsed.path}"
     name, ext = os.path.splitext(path)
-    formatted_name = re.sub(r"[^a-zA-Z0-9]", "-", name)
+    formatted_name = re.sub(r"\W", "-", name)
     if not ext and not path.endswith("/"):
         ext = ".html"
     return f"{formatted_name}{ext}"
@@ -23,6 +23,13 @@ def is_local(src_url, page_url):
     src_parsed = urlparse(urljoin(page_url, src_url))
     page_parsed = urlparse(page_url)
     return src_parsed.netloc == "" or src_parsed.netloc == page_parsed.netloc
+
+
+def download_resource(resource_url, output_path):
+    response = requests.get(resource_url, timeout=(3, 10))
+    response.raise_for_status()
+    with open(output_path, "wb") as file:
+        file.write(response.content)
 
 
 def download(url, dir_path=os.getcwd()):
@@ -47,25 +54,24 @@ def download(url, dir_path=os.getcwd()):
     logging.info(f"create directory for assets: {assets_dir}")
 
     soup = BeautifulSoup(response.text, "html.parser")
+    resoure_tags = soup.find_all(["img", "script", "link"])
 
-    for tag in soup.find_all("img"):
-        src = tag.get("src")
-        if not src or not is_local(src, url):
+    for tag in resoure_tags:
+        attr = "src" if tag.name in ["img", "script"] else "href"
+        resource_url = tag.get(attr)
+
+        if not resource_url or not is_local(resource_url, url):
             continue
 
-        asset_url = urljoin(url, src)
-        asset_filename = formate_filename(asset_url)
+        full_url = urljoin(url, resource_url)
+        asset_filename = formate_filename(full_url)
         asset_path = os.path.join(assets_dir, asset_filename)
 
-        asset_response = requests.get(asset_url, timeout=(3, 10))
-        asset_response.raise_for_status()
+        download_resource(full_url, asset_path)
 
-        with open(asset_path, "wb") as asset_file:
-            asset_file.write(asset_response.content)
+        tag[attr] = os.path.join(assets_dirname, asset_filename)
 
-        tag["src"] = os.path.join(assets_dirname, asset_filename)
-
-    with open(html_path, "w", encoding="utf-8") as file:
+    with open(html_path, "w") as file:
         file.write(soup.prettify())
 
     return html_path
