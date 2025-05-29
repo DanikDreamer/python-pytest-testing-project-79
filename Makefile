@@ -5,7 +5,7 @@ lint:
 	uv run flake8 page_loader tests
 
 test:
-	uv run pytest -vv -s --capture=tee-sys --log-cli-level=DEBUG
+	uv run pytest -vv
 
 cover:
 	uv run pytest --cov
