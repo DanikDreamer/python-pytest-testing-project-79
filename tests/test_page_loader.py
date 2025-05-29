@@ -1,5 +1,6 @@
 import os
 import pathlib
+from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
 import pytest
@@ -71,6 +72,7 @@ def test_page_load(requests_mock, tmp_path):
     actual_html = read(html_path)
     expected_html = read(get_test_data_path("after.html"))
 
+    assert tmp_path in Path(html_path).parents
     assert normalize_html(actual_html) == normalize_html(expected_html)
 
     assets_dir = tmp_path / "ru-hexlet-io-courses_files"
