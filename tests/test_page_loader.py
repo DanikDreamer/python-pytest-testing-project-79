@@ -52,23 +52,34 @@ def test_storage_errors(requests_mock, tmp_path):
 
 def test_page_load(requests_mock, tmp_path):
     url = "https://ru.hexlet.io/courses"
-    asset_url = "https://ru.hexlet.io/assets/professions/python.png"
-    assets_dir = tmp_path / "ru-hexlet-io-courses_files"
-    asset_filename = "ru-hexlet-io-assets-professions-python.png"
-    asset_path = assets_dir / asset_filename
-
     html_before = read(get_test_data_path("before.html"))
     requests_mock.get(url, text=html_before)
 
-    asset_data = read(get_test_data_path("logo.png"), binary=True)
-    requests_mock.get(asset_url, content=asset_data)
+    png_data = read(get_test_data_path("logo.png"), binary=True)
+    resources = {
+        "https://ru.hexlet.io/assets/application.css": b"body { background: white; }",
+        "https://ru.hexlet.io/assets/professions/python.png": png_data,
+        "https://ru.hexlet.io/packs/js/runtime.js": b"console.log('hello');",
+    }
 
-    downloaded_html_page = download(url, tmp_path)
+    for resource_url, content in resources.items():
+        requests_mock.get(resource_url, content=content)
 
+    html_path = download(url, tmp_path)
+    actual_html = read(html_path)
     expected_html = read(get_test_data_path("after.html"))
-    actual_html = read(downloaded_html_page)
 
-    assert os.path.exists(downloaded_html_page)
     assert normalize_html(actual_html) == normalize_html(expected_html)
-    assert os.path.exists(asset_path)
-    assert read(asset_path, binary=True) == asset_data
+    assert os.path.exists(html_path)
+
+    assets_dir = tmp_path / "ru-hexlet-io-courses_files"
+    assert (
+        assets_dir / "ru-hexlet-io-assets-application.css"
+    ).read_bytes() == resources["https://ru.hexlet.io/assets/application.css"]
+    assert (
+        assets_dir / "ru-hexlet-io-assets-professions-python.png"
+    ).read_bytes() == resources["https://ru.hexlet.io/assets/professions/python.png"]
+    assert (assets_dir / "ru-hexlet-io-packs-js-runtime.js").read_bytes() == resources[
+        "https://ru.hexlet.io/packs/js/runtime.js"
+    ]
+    assert (assets_dir / "ru-hexlet-io-courses.html").exists()
