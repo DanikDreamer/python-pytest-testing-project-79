@@ -40,7 +40,7 @@ def test_storage_errors(requests_mock, tmp_path):
     url = "https://site.com/blog/about"
     requests_mock.get(url)
 
-    with pytest.raises(PermissionError):
+    with pytest.raises(OSError):
         download(url, "/sys")
 
     with pytest.raises(NotADirectoryError):
