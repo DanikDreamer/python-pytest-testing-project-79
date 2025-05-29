@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 import pytest
 from bs4 import BeautifulSoup
@@ -13,8 +14,8 @@ def read(file_path, binary=False):
         return f.read()
 
 
-def get_test_data_path(name):
-    return os.path.join("tests/test_data", name)
+def get_test_data_path(filename):
+    return pathlib.Path(__file__).parent / "test_data" / filename
 
 
 def normalize_html(html_str):
