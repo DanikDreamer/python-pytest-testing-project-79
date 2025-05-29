@@ -1,7 +1,10 @@
 import argparse
+import logging
 import sys
 
 from page_loader import download
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
 def main():
@@ -14,8 +17,10 @@ def main():
         file_path = download(args.url, args.output)
         print(f"Page was downloaded as '{file_path}'")
     except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit()
+        logging.error(f"Error: {e}")
+        sys.exit(1)
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":
