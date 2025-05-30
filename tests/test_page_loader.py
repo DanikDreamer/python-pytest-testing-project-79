@@ -1,3 +1,4 @@
+import logging
 import os
 import pathlib
 import tempfile
@@ -8,6 +9,9 @@ from bs4 import BeautifulSoup
 from requests.exceptions import ConnectionError, HTTPError
 
 from page_loader import download
+
+logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 
 def read(file_path, binary=False):
@@ -63,6 +67,8 @@ def test_page_load(requests_mock, tmp_path):
     html_before = read(get_test_data_path("before.html"))
     requests_mock.get(url, text=html_before)
 
+    logger.info("Downloading: %s", url)
+
     png_data = read(get_test_data_path("logo.png"), binary=True)
     resources = {
         "https://ru.hexlet.io/assets/application.css": b"body { background: white; }",
@@ -74,10 +80,13 @@ def test_page_load(requests_mock, tmp_path):
         requests_mock.get(resource_url, content=content)
 
     html_path = download(url, tmp_path)
+
+    logger.info("Saved to: %s", html_path)
+
     actual_html = read(html_path)
     expected_html = read(get_test_data_path("after.html"))
 
-    assert html_path == f"{tmp_path}/ru-hexlet-io-courses.html"
+    assert html_path == os.path.join(tmp_path, "ru-hexlet-io-courses.html")
     assert tmp_path in Path(html_path).parents
     assert normalize_html(actual_html) == normalize_html(expected_html)
 
@@ -93,8 +102,15 @@ def test_page_load(requests_mock, tmp_path):
     ]
     assert (assets_dir / "ru-hexlet-io-courses.html").read_text() == html_before
 
+    logger.info("Request history: %s", requests_mock.request_history)
+    logger.info("url: %s", requests_mock.request_history[0].url)
+    logger.info("method: %s", requests_mock.request_history[0].method)
+
     assert requests_mock.called
     assert requests_mock.call_count == 5
 
+    dir = list(tmp_path.iterdir())
     files = list(assets_dir.iterdir())
     assert len(files) == 4
+    logger.info("len dir: %s", len(dir))
+    logger.info("len asset dir: %s", len(files))
