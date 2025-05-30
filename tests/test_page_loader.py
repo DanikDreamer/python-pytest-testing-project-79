@@ -8,7 +8,7 @@ import pytest
 from bs4 import BeautifulSoup
 from requests.exceptions import ConnectionError, HTTPError
 
-from page_loader import download
+import page_loader
 
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -30,14 +30,14 @@ def normalize_html(html_str):
 
 def test_invalid_url(tmp_path):
     with pytest.raises(ValueError):
-        download("not-a-url", tmp_path)
+        page_loader.download("not-a-url", tmp_path)
 
 
 def test_connection_error(requests_mock, tmp_path):
     url = "https://badsite.com"
     requests_mock.get(url, exc=ConnectionError)
     with pytest.raises(ConnectionError):
-        download(url, tmp_path)
+        page_loader.download(url, tmp_path)
 
     dir = list(tmp_path.iterdir())
     logger.info("dir: %s", [*dir])
@@ -48,7 +48,7 @@ def test_response_with_error(status_code, requests_mock, tmp_path):
     url = f"https://site.com/{status_code}"
     requests_mock.get(url, status_code=status_code)
     with pytest.raises(HTTPError):
-        download(url, tmp_path)
+        page_loader.download(url, tmp_path)
 
     dir = list(tmp_path.iterdir())
     logger.info("dir: %s", [*dir])
@@ -59,13 +59,13 @@ def test_storage_errors(requests_mock, tmp_path):
     requests_mock.get(url)
 
     with pytest.raises((OSError, PermissionError)):
-        download(url, "/sys")
+        page_loader.download(url, "/sys")
 
     with pytest.raises(NotADirectoryError):
-        download(url, f"{tmp_path}/site-com-blog-about.html")
+        page_loader.download(url, f"{tmp_path}/site-com-blog-about.html")
 
     with pytest.raises(NotADirectoryError):
-        download(url, f"{tmp_path}/notExistsPath")
+        page_loader.download(url, f"{tmp_path}/notExistsPath")
 
     dir = list(tmp_path.iterdir())
     logger.info("dir: %s", [*dir])
@@ -88,7 +88,7 @@ def test_page_load(requests_mock, tmp_path):
     for resource_url, content in resources.items():
         requests_mock.get(resource_url, content=content)
 
-    html_path = download(url, tmp_path)
+    html_path = page_loader.download(url, tmp_path)
 
     logger.info("Saved to: %s", html_path)
 
