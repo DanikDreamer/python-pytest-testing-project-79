@@ -1,0 +1,37 @@
+[
+    {
+        "url": "https://ru.hexlet.io/assets/professions/python.png",
+        "content": "Mocked content for /assets/professions/python.png",
+        "path": "ru-hexlet-io-assets-professions-python.png"
+    },
+    {
+        "url": "https://ru.hexlet.io/courses/assets/professions/python.jpg",
+        "content": "Mocked content for assets/professions/python.jpg",
+        "path": "ru-hexlet-io-courses-assets-professions-python.jpg"
+    },
+    {
+        "url": "https://ru.hexlet.io/courses/assets/professions/python.bmp",
+        "content": "Mocked content for https://ru.hexlet.io/courses/assets/professions/python.bmp",
+        "path": "ru-hexlet-io-courses-assets-professions-python.bmp"
+    },
+    {
+        "url": "https://ru.hexlet.io/assets/application.css",
+        "content": "* {\n  margin: 0;\n  padding: 0;\n}",
+        "path": "ru-hexlet-io-assets-application.css"
+    },
+    {
+        "url": "https://ru.hexlet.io/packs/js/runtime.js",
+        "content": "\"console.log('Hello javascript!');\\n\"",
+        "path": "ru-hexlet-io-packs-js-runtime.js"
+    },
+    {
+        "url": "https://ru.hexlet.io/packs/js/script.js",
+        "content": "console.log('Goodbye javascript!');",
+        "path": "ru-hexlet-io-packs-js-script.js"
+    },
+    {
+        "url": "https://ru.hexlet.io/courses.html",
+        "content": "<html>Your retrieved content here</html>",
+        "path": "ru-hexlet-io-courses.html"
+    }
+]
