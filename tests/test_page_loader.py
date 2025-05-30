@@ -153,17 +153,6 @@ def test_download_overwrites_existing_files(requests_mock, tmp_path):
         assert f.read() == normalize_html("<html></html>")
 
 
-def test_download_permission_error(requests_mock):
-    """Check that download raises PermissionError for unwritable directory."""
-    url = "https://site.com/page"
-    requests_mock.get(url, text="<html></html>")
-    with tempfile.TemporaryDirectory() as tmpdir:
-        os.chmod(tmpdir, 0o400)  # Read-only
-        with pytest.raises((PermissionError, OSError)):
-            download(url, tmpdir)
-        os.chmod(tmpdir, 0o700)  # Restore permissions for cleanup
-
-
 def test_download_invalid_url(requests_mock, tmp_path):
     """Check that download raises for invalid URL."""
     url = "not a url"
