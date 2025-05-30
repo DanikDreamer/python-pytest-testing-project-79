@@ -1,18 +1,41 @@
-[project]
+[tool.poetry]
 name = "hexlet-code"
-version = "0.1.0"
-description = "CLI utility to download web pages"
-readme = "README.md"
-requires-python = ">=3.12"
-dependencies = [
-    "beautifulsoup4>=4.13.4",
-    "hatch>=1.14.1",
-    "requests>=2.32.3",
-    "tqdm>=4.67.1",
+version = "0.1.5"
+
+packages = [
+  { include = "page_loader" },
 ]
 
+[project]
+name = "hexlet-code"
+version = "0.1.5"
+dependencies = ["bs4", "pytest_asyncio"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+requests = "^2.28.0"
+bs4 = "^0.0.1"
+pook = "^1.0.2"
+
+[tool.uv]
+reinstall = true
+
 [project.scripts]
-page-loader = "page_loader.cli:main"
+page-loader = "page_loader.scripts.main:main"
+
+[tool.poetry.scripts]
+page-loader = "page_loader.scripts.main:main"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^4.0.1"
+pytest = "^7.1.2"
+pytest-cov = "^3.0.0"
+requests-mock = "^1.9.3"
+asyncio = "^3.4.3"
+pytest-asyncio = "^0.18.3"
+bs4 = "^0.0.1"
+pook = "^1.0.2"
+python = "^3.8"
 
 [build-system]
 requires = ["hatchling"]
@@ -20,13 +43,3 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["page_loader"]
-
-[dependency-groups]
-dev = [
-    "black>=25.1.0",
-    "flake8>=7.2.0",
-    "isort>=6.0.1",
-    "pytest>=8.3.5",
-    "pytest-cov>=6.1.1",
-    "requests-mock>=1.12.1",
-]
