@@ -1,7 +1,5 @@
-import os
 import pathlib
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
 
 import pytest
 from bs4 import BeautifulSoup
@@ -86,3 +84,9 @@ def test_page_load(requests_mock, tmp_path):
         "https://ru.hexlet.io/packs/js/runtime.js"
     ]
     assert (assets_dir / "ru-hexlet-io-courses.html").exists()
+
+    assert requests_mock.called
+    assert requests_mock.call_count >= 4
+
+    files = list(assets_dir.iterdir())
+    assert len(files) == 4
