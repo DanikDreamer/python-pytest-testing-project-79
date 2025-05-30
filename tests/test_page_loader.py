@@ -37,9 +37,6 @@ def test_connection_error(requests_mock, tmp_path):
         page_loader.download(url, tmp_path)
     logger.warning("Raised: %s", repr(excinfo.value))
 
-    dir = list(tmp_path.iterdir())
-    logger.info("dir: %s", [*dir])
-
 
 @pytest.mark.parametrize("status_code", [404, 500])
 def test_response_with_error(status_code, requests_mock, tmp_path):
@@ -51,9 +48,6 @@ def test_response_with_error(status_code, requests_mock, tmp_path):
     with pytest.raises(Exception) as excinfo:
         page_loader.download(url, tmp_path)
     logger.warning("Raised: %s", repr(excinfo.value))
-
-    dir = list(tmp_path.iterdir())
-    logger.info("dir: %s", [*dir])
 
 
 def test_storage_errors(requests_mock, tmp_path):
@@ -81,16 +75,11 @@ def test_storage_errors(requests_mock, tmp_path):
     # with pytest.raises(NotADirectoryError):
     #     download(url, f"{tmp_path}/notExistsPath")
 
-    dir = list(tmp_path.iterdir())
-    logger.info("dir: %s", [*dir])
-
 
 def test_page_load(requests_mock, tmp_path):
     url = "https://ru.hexlet.io/courses"
     html_before = read(get_test_data_path("before.html"))
     requests_mock.get(url, text=html_before)
-
-    logger.info("Downloading: %s", url)
 
     png_data = read(get_test_data_path("logo.png"), binary=True)
     resources_content = {
@@ -111,8 +100,6 @@ def test_page_load(requests_mock, tmp_path):
         requests_mock.get(resource_url, content=content)
 
     html_path = page_loader.download(url, tmp_path)
-
-    logger.info("Saved to: %s", html_path)
 
     main_html_filename = "ru-hexlet-io-courses.html"
     assets_dirname = "ru-hexlet-io-courses_files"
@@ -198,12 +185,5 @@ def test_page_load(requests_mock, tmp_path):
         requests_mock.call_count == 5
     ), f"Expected 5 HTTP requests, but {requests_mock.call_count} were made."
 
-    logger.info("Request history: %s", requests_mock.request_history)
-    logger.info("url: %s", requests_mock.request_history[0].url)
-    logger.info("method: %s", requests_mock.request_history[0].method)
-
-    dir_content = list(tmp_path.iterdir())
     files_in_assets_dir = list(assets_dir_path.iterdir())
     assert len(files_in_assets_dir) == len(expected_asset_filenames)
-    logger.info("dir: %s", [*dir_content])
-    logger.info("len asset dir: %s", [*files_in_assets_dir])
