@@ -83,7 +83,7 @@ def test_page_load(requests_mock, tmp_path):
     assert (assets_dir / "ru-hexlet-io-packs-js-runtime.js").read_bytes() == resources[
         "https://ru.hexlet.io/packs/js/runtime.js"
     ]
-    assert (assets_dir / "ru-hexlet-io-courses.html").exists()
+    assert (assets_dir / "ru-hexlet-io-courses.html").read_text() == html_before
 
     assert requests_mock.called
     assert requests_mock.call_count >= 4
