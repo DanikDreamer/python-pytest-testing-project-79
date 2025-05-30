@@ -1,6 +1,5 @@
 import logging
 import os
-import pathlib
 import re
 import sys
 from urllib.parse import urljoin, urlparse
@@ -53,8 +52,8 @@ def download(url, dir_path=os.getcwd()):
     response = requests.get(url, timeout=(3, 10))
     response.raise_for_status()
 
-    if not pathlib.Path(dir_path).exists():
-        raise FileNotFoundError("The path to the directory was not found")
+    if not os.path.isdir(dir_path):
+        raise NotADirectoryError(f"{dir_path} is not a directory")
     filename = format_filename(url)
     html_path = os.path.join(dir_path, filename)
 
