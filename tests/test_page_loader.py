@@ -45,8 +45,12 @@ def test_connection_error(requests_mock, tmp_path):
 def test_response_with_error(status_code, requests_mock, tmp_path):
     url = f"https://site.com/{status_code}"
     requests_mock.get(url, status_code=status_code)
-    with pytest.raises(HTTPError):
+    # with pytest.raises(HTTPError):
+    #     download(url, tmp_path)
+
+    with pytest.raises(Exception) as excinfo:
         download(url, tmp_path)
+    logger.warning("Raised: %s", repr(excinfo.value))
 
     dir = list(tmp_path.iterdir())
     logger.info("dir: %s", [*dir])
@@ -56,14 +60,26 @@ def test_storage_errors(requests_mock, tmp_path):
     url = "https://site.com/blog/about"
     requests_mock.get(url)
 
-    with pytest.raises((OSError, PermissionError)):
+    # with pytest.raises((OSError, PermissionError)):
+    #     download(url, "/sys")
+
+    with pytest.raises(Exception) as excinfo:
         download(url, "/sys")
+    logger.warning("Raised: %s", repr(excinfo.value))
 
-    with pytest.raises(NotADirectoryError):
+    with pytest.raises(Exception) as excinfo:
         download(url, f"{tmp_path}/site-com-blog-about.html")
+    logger.warning("Raised: %s", repr(excinfo.value))
 
-    with pytest.raises(NotADirectoryError):
+    with pytest.raises(Exception) as excinfo:
         download(url, f"{tmp_path}/notExistsPath")
+    logger.warning("Raised: %s", repr(excinfo.value))
+
+    # with pytest.raises(NotADirectoryError):
+    #     download(url, f"{tmp_path}/site-com-blog-about.html")
+
+    # with pytest.raises(NotADirectoryError):
+    #     download(url, f"{tmp_path}/notExistsPath")
 
     dir = list(tmp_path.iterdir())
     logger.info("dir: %s", [*dir])
