@@ -53,7 +53,7 @@ def download(url, dir_path=os.getcwd()):
     response.raise_for_status()
 
     if not os.path.isdir(dir_path):
-        raise NotADirectoryError(f"{dir_path} is not a directory")
+        raise NotADirectoryError(f"{dir_path} blablabla")
     filename = format_filename(url)
     html_path = os.path.join(dir_path, filename)
 
