@@ -35,7 +35,7 @@ def test_connection_error(requests_mock, tmp_path):
 
     with pytest.raises(Exception) as excinfo:
         download(url, tmp_path)
-        logger.warning("Raised: %s", repr(excinfo.value))
+    logger.warning("Raised: %s", repr(excinfo.value))
 
     dir = list(tmp_path.iterdir())
     logger.info("dir: %s", [*dir])
