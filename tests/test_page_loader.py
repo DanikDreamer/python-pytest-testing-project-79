@@ -112,5 +112,5 @@ def test_page_load(requests_mock, tmp_path):
     dir = list(tmp_path.iterdir())
     files = list(assets_dir.iterdir())
     assert len(files) == 4
-    logger.info("len dir: %s", len(dir))
-    logger.info("len asset dir: %s", len(files))
+    logger.info("dir: %s", [*dir])
+    logger.info("len asset dir: %s", [*files])
