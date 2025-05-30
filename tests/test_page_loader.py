@@ -38,8 +38,8 @@ def test_response_errors(temp_dir, status_code):
 @pytest.mark.parametrize(
     "invalid_path, expected_exception",
     [
-        ("/notExistsPath", FileNotFoundError),
-        ("/sys", (OSError, PermissionError)),
+        ("/notExistsPath", (OSError, FileNotFoundError)),
+        ("/sys", PermissionError),
     ],
 )
 def test_storage_errors(invalid_path, expected_exception):
