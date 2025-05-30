@@ -41,6 +41,8 @@ def test_storage_errors(requests_mock, tmp_path):
     url = "https://site.com/blog/about"
     requests_mock.get(url)
 
+    assert requests_mock.called
+
     with pytest.raises((OSError, PermissionError)):
         download(url, "/sys")
 
