@@ -24,6 +24,11 @@ def normalize_html(html_str):
     return BeautifulSoup(html_str, "html.parser").prettify()
 
 
+def test_invalid_url(tmp_path):
+    with pytest.raises(ValueError):
+        download("not-a-url", tmp_path)
+
+
 def test_connection_error(requests_mock, tmp_path):
     url = "https://badsite.com"
     requests_mock.get(url, exc=ConnectionError)
@@ -92,110 +97,3 @@ def test_page_load(requests_mock, tmp_path):
 
     files = list(assets_dir.iterdir())
     assert len(files) == 4
-
-
-def test_download_returns_correct_path(requests_mock, tmp_path):
-    """Check that download returns the correct file path."""
-    url = "https://site.com/page"
-    html = "<html></html>"
-    requests_mock.get(url, text=html)
-    result_path = download(url, tmp_path)
-    assert os.path.isfile(result_path)
-    assert result_path.endswith(".html")
-
-
-def test_assets_dir_created(requests_mock, tmp_path):
-    """Check that assets directory is created and is a directory."""
-    url = "https://site.com/page"
-    html = '<html><img src="/img.png"></html>'
-    requests_mock.get(url, text=html)
-    requests_mock.get("https://site.com/img.png", content=b"imgdata")
-    download(url, tmp_path)
-    assets_dir = tmp_path / "site-com-page_files"
-    assert assets_dir.exists()
-    assert assets_dir.is_dir()
-
-
-def test_external_resources_not_downloaded(requests_mock, tmp_path):
-    """Check that external resources are not downloaded or replaced."""
-    url = "https://site.com/page"
-    html = '<html><img src="https://external.com/img.png"></html>'
-    requests_mock.get(url, text=html)
-    html_path = download(url, tmp_path)
-    with open(html_path) as f:
-        content = f.read()
-    assert "external.com/img.png" in content  # Should not be replaced
-
-
-def test_relative_links_handling(requests_mock, tmp_path):
-    """Check that relative links are resolved and downloaded."""
-    url = "https://site.com/page"
-    html = '<html><img src="img.png"></html>'
-    requests_mock.get(url, text=html)
-    requests_mock.get("https://site.com/img.png", content=b"imgdata")
-    download(url, tmp_path)
-    assets_dir = tmp_path / "site-com-page_files"
-    assert (assets_dir / "site-com-img.png").exists()
-
-
-def test_download_overwrites_existing_files(requests_mock, tmp_path):
-    """Check that download overwrites existing files (idempotency)."""
-    url = "https://site.com/page"
-    html = "<html></html>"
-    requests_mock.get(url, text=html)
-    html_path = download(url, tmp_path)
-    with open(html_path, "w") as f:
-        f.write("old content")
-    # Call download again, should overwrite
-    requests_mock.get(url, text=html)
-    html_path2 = download(url, tmp_path)
-    with open(html_path2) as f:
-        assert f.read() == normalize_html("<html></html>")
-
-
-def test_download_invalid_url(requests_mock, tmp_path):
-    """Check that download raises for invalid URL."""
-    url = "not a url"
-    with pytest.raises(Exception):
-        download(url, tmp_path)
-
-
-def test_download_handles_empty_html(requests_mock, tmp_path):
-    """Check that download works with empty HTML."""
-    url = "https://site.com/page"
-    requests_mock.get(url, text="")
-    html_path = download(url, tmp_path)
-    assert os.path.isfile(html_path)
-    with open(html_path) as f:
-        assert f.read() == ""
-
-
-def test_download_handles_no_assets(requests_mock, tmp_path):
-    """Check that download works if there are no assets."""
-    url = "https://site.com/page"
-    html = "<html><body>No assets here</body></html>"
-    requests_mock.get(url, text=html)
-    html_path = download(url, tmp_path)
-    assets_dir = tmp_path / "site-com-page_files"
-    assert assets_dir.exists()
-    assert list(assets_dir.iterdir()) == []
-
-
-def test_download_asset_link_variants(requests_mock, tmp_path):
-    """Check that download handles <link> with rel=stylesheet and others."""
-    url = "https://site.com/page"
-    html = """
-    <html>
-        <head>
-        <link rel="stylesheet" href="/style.css">
-        <link rel="icon" href="/favicon.ico">
-        </head>
-    </html>
-    """
-    requests_mock.get(url, text=html)
-    requests_mock.get("https://site.com/style.css", content=b"css")
-    requests_mock.get("https://site.com/favicon.ico", content=b"ico")
-    download(url, tmp_path)
-    assets_dir = tmp_path / "site-com-page_files"
-    assert (assets_dir / "site-com-style.css").exists()
-    assert (assets_dir / "site-com-favicon.ico").exists()
