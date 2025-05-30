@@ -95,7 +95,7 @@ def test_download_with_images(tmp_path):
     """
     img_url = "https://ru.hexlet.io/assets/professions/python.png"
     # Загружаем реальную картинку из fixtures
-    real_image_path = Path("tests/fixtures/python.png")
+    real_image_path = Path(__file__).parent / "fixtures/python.png"
     img_content = real_image_path.read_bytes()
 
     expected_img_filename = "ru-hexlet-io-assets-professions-python.png"
