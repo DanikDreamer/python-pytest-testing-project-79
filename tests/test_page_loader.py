@@ -7,7 +7,7 @@ import pytest
 from bs4 import BeautifulSoup
 from requests.exceptions import ConnectionError, HTTPError
 
-import page_loader.page
+import page_loader
 
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ def test_connection_error(requests_mock, tmp_path):
     #     download(url, tmp_path)
 
     with pytest.raises(Exception) as excinfo:
-        page_loader.page.download(url, tmp_path)
+        page_loader.download(url, tmp_path)
     logger.warning("Raised: %s", repr(excinfo.value))
 
     dir = list(tmp_path.iterdir())
@@ -49,7 +49,7 @@ def test_response_with_error(status_code, requests_mock, tmp_path):
     #     download(url, tmp_path)
 
     with pytest.raises(Exception) as excinfo:
-        page_loader.page.download(url, tmp_path)
+        page_loader.download(url, tmp_path)
     logger.warning("Raised: %s", repr(excinfo.value))
 
     dir = list(tmp_path.iterdir())
@@ -61,18 +61,18 @@ def test_storage_errors(requests_mock, tmp_path):
     requests_mock.get(url)
 
     with pytest.raises((OSError, PermissionError)):
-        page_loader.page.download(url, "/sys")
+        page_loader.download(url, "/sys")
 
     # with pytest.raises(Exception) as excinfo:
     #     download(url, "/sys")
     # logger.warning("Raised: %s", repr(excinfo.value))
 
     with pytest.raises(Exception) as excinfo:
-        page_loader.page.download(url, f"{tmp_path}/site-com-blog-about.html")
+        page_loader.download(url, f"{tmp_path}/site-com-blog-about.html")
     logger.warning("Raised: %s", repr(excinfo.value))
 
     with pytest.raises(Exception) as excinfo:
-        page_loader.page.download(url, f"{tmp_path}/notExistsPath")
+        page_loader.download(url, f"{tmp_path}/notExistsPath")
     logger.warning("Raised: %s", repr(excinfo.value))
 
     # with pytest.raises(NotADirectoryError):
@@ -110,7 +110,7 @@ def test_page_load(requests_mock, tmp_path):
     for resource_url, content in resources_content.items():
         requests_mock.get(resource_url, content=content)
 
-    html_path = page_loader.page.download(url, tmp_path)
+    html_path = page_loader.download(url, tmp_path)
 
     logger.info("Saved to: %s", html_path)
 
