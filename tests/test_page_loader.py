@@ -39,6 +39,9 @@ def test_connection_error(requests_mock, tmp_path):
     with pytest.raises(ConnectionError):
         download(url, tmp_path)
 
+    dir = list(tmp_path.iterdir())
+    logger.info("dir: %s", [*dir])
+
 
 @pytest.mark.parametrize("status_code", [404, 500])
 def test_response_with_error(status_code, requests_mock, tmp_path):
@@ -46,6 +49,9 @@ def test_response_with_error(status_code, requests_mock, tmp_path):
     requests_mock.get(url, status_code=status_code)
     with pytest.raises(HTTPError):
         download(url, tmp_path)
+
+    dir = list(tmp_path.iterdir())
+    logger.info("dir: %s", [*dir])
 
 
 def test_storage_errors(requests_mock, tmp_path):
@@ -60,6 +66,9 @@ def test_storage_errors(requests_mock, tmp_path):
 
     with pytest.raises(NotADirectoryError):
         download(url, f"{tmp_path}/notExistsPath")
+
+    dir = list(tmp_path.iterdir())
+    logger.info("dir: %s", [*dir])
 
 
 def test_page_load(requests_mock, tmp_path):
