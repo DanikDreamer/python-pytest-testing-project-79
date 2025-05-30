@@ -1,13 +1,11 @@
 import os
-import logging
+
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import validators
 from page_loader.errors_handlers import request_errors_handler
 from page_loader.errors_handlers import file_errors_handler
 from page_loader.errors_handlers import dir_errors_handler
-
-logging.basicConfig(level=logging.INFO)
 
 
 def url_to_filename(url: str, type=".html"):
@@ -83,9 +81,9 @@ def get_images(request_text, path, new_dir_name, hostname, scheme):
 
 
 def download(url: str, path: str = os.getcwd()) -> str:
-    logging.info(f"requested url: {url}")
+    print(f"requested url: {url}")
     absoulute_path = os.path.abspath(path)
-    logging.info(f"output path: {absoulute_path}")
+    print(f"output path: {absoulute_path}")
 
     request = request_errors_handler(url)
 
@@ -93,14 +91,14 @@ def download(url: str, path: str = os.getcwd()) -> str:
     new_html_path = os.path.join(path, new_html_file_name)
 
     new_html_absolue_path = os.path.abspath(new_html_path)
-    logging.info(f"write html file: {new_html_absolue_path}")
+    print(f"write html file: {new_html_absolue_path}")
 
     file_errors_handler(new_html_absolue_path, request)
 
     new_dir_path = f"{new_html_path[:-5]}_files"
     new_dir_name = os.path.split(new_dir_path)[1]
     new_dir_absolute_path = os.path.abspath(new_dir_path)
-    logging.info(f"create a directory for assets: {new_dir_absolute_path}")
+    print(f"create a directory for assets: {new_dir_absolute_path}")
 
     dir_errors_handler(new_dir_absolute_path)
 
@@ -113,3 +111,4 @@ def download(url: str, path: str = os.getcwd()) -> str:
         file.write(str(soup.prettify()))
 
     return new_html_path
+
