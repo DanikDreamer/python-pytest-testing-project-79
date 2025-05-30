@@ -86,7 +86,7 @@ def test_page_load(requests_mock, tmp_path):
     assert (assets_dir / "ru-hexlet-io-courses.html").read_text() == html_before
 
     assert requests_mock.called
-    assert requests_mock.call_count >= 4
+    assert requests_mock.call_count == 5
 
     files = list(assets_dir.iterdir())
     assert len(files) == 4
