@@ -123,3 +123,33 @@ def test_page_load(requests_mock, tmp_path):
     assert len(files) == 4
     logger.info("dir: %s", [*dir])
     logger.info("len asset dir: %s", [*files])
+
+    logger.info("expected_html: %s", expected_html)
+    logger.info("actual_html: %s", actual_html)
+
+    logger.info(
+        "expected_css: %s",
+        resources["https://ru.hexlet.io/assets/application.css"],
+    )
+    logger.info(
+        "actual_css: %s",
+        (assets_dir / "ru-hexlet-io-assets-application.css").read_text(),
+    )
+
+    logger.info(
+        "expected_js: %s",
+        resources["https://ru.hexlet.io/packs/js/runtime.js"],
+    )
+    logger.info(
+        "actual_js: %s",
+        (assets_dir / "ru-hexlet-io-packs-js-runtime.js").read_text(),
+    )
+
+    logger.info(
+        "expected_can_html: %s",
+        html_before,
+    )
+    logger.info(
+        "actual_can_html: %s",
+        (assets_dir / "ru-hexlet-io-courses.html").read_text(),
+    )
