@@ -1,183 +1,134 @@
-import difflib
+import logging
 import os
-from urllib.parse import urlparse
+import tempfile
+from pathlib import Path
 
 import pytest
 import requests
+import requests_mock
 from bs4 import BeautifulSoup
 
-from page_loader.page_loader import download, RequestInvalidStatus
+from page_loader.page_loader import make_filename, download
 
-HOST = 'ru.hexlet.io'
-
-
-# Positive: existing url, existing folder
-def test_file_download_positive(tmp_path):
-    temp = str(tmp_path)
-    file_path = download(url='https://ru.hexlet.io/courses', output=temp)
-    expected_path = os.path.join(temp, 'ru-hexlet-io-courses.html')
-    assert file_path == expected_path
-    assert os.path.exists(expected_path)
+# Настройка логирования для читаемого вывода
+logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 
-# Positive: existing url, no output provided
-def test_download_without_output():
-    file_path = download(url='https://ru.hexlet.io/courses')
-    expected_path = ('/project/.venv/lib/python3.13/site-packages'
-                     '/page_loader/ru-hexlet-io-courses.html')
-    assert file_path == expected_path
-    expected_assets_dir_path = (os.path.join(
-        '/project/.venv/lib/python3.13/site-packages/page_loader',
-        'ru-hexlet-io-courses_files'))
-    assert os.path.exists(expected_assets_dir_path)
+@pytest.fixture
+def temp_dir():
+    """Фикстура для создания временной директории"""
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        yield tmpdirname
 
 
-# Positive: Download 2 pages
-def test_file_download_two_pages(tmp_path):
-    temp = str(tmp_path)
-    file_path = download(url='https://ru.hexlet.io/courses', output=temp)
-    expected_path = os.path.join(temp, 'ru-hexlet-io-courses.html')
-    expected_assets_dir_path = os.path.join(temp,
-                                            'ru-hexlet-io-courses_files')
-    assert file_path == expected_path
-    assert os.path.exists(expected_path)
-    assert os.path.exists(expected_assets_dir_path)
-    file_path_2 = download(url='https://ru.hexlet.io/webinars', output=temp)
-    expected_path_2 = os.path.join(temp, 'ru-hexlet-io-webinars.html')
-    expected_assets_dir_path = os.path.join(temp,
-                                            'ru-hexlet-io-webinars_files')
-    assert file_path_2 == expected_path_2
-    assert os.path.exists(expected_path_2)
-    assert os.path.exists(expected_assets_dir_path)
-    assert os.path.exists(expected_path)
+def test_make_filename():
+    """Тестирование создания имени файла из URL"""
+    urls = [
+        ("https://ru.hexlet.io/courses", "ru-hexlet-io-courses.html"),
+        ("http://example.com/path/page", "example-com-path-page.html"),
+        ("https://test.com/some-page?query=1", "test-com-some-page-query-1.html"),
+    ]
+
+    for url, expected in urls:
+        assert make_filename(url) == expected
 
 
-# Positive: All expected assets exist
-def test_assets_exist(tmp_path):
-    temp = str(tmp_path)
-    download(url='https://ru.hexlet.io/courses', output=temp)
-    required_files = os.listdir(
-        f'{os.path.dirname(__file__)}/fixtures/test_all_assets_exist')
-    expected_assets_dir_path = os.path.join(temp, 'ru-hexlet-io-courses_files')
-    assert os.path.exists(expected_assets_dir_path)
-    for file in required_files:
-        file_path = os.path.join(expected_assets_dir_path, file)
+@pytest.mark.parametrize("status_code", [404, 500])
+def test_response_errors(temp_dir, status_code):
+    """Тестирование обработки ошибок 404 и 500"""
+    url = f"https://site.com/error-{status_code}"
+
+    with requests_mock.Mocker() as m:
+        m.get(url, status_code=status_code)
+        logger.info("Requested URL: %s (Expected error %s)", url, status_code)
+
+        with pytest.raises(requests.exceptions.HTTPError):
+            download(url, temp_dir)
+
+
+@pytest.mark.parametrize("invalid_path, expected_exception", [
+    ("X:\\this\\path\\does\\not\\exist", FileNotFoundError),
+    ("C:\\Windows\\System32\\config", PermissionError),
+])
+def test_storage_errors(invalid_path, expected_exception):
+    """Тестирование ошибок при сохранении"""
+    url = "https://site.com/blog/about"
+
+    with requests_mock.Mocker() as m:
+        m.get(url, text="<html></html>")
+
+        with pytest.raises(expected_exception):
+            download(url, invalid_path)
+
+
+def test_download(temp_dir):
+    """Тестирование скачивания страницы"""
+    url = "https://ru.hexlet.io/courses"
+    test_page_text = "<html><body>Test Page</body></html>"
+    expected_filename = os.path.join(temp_dir, "ru-hexlet-io-courses.html")
+    expected_html = BeautifulSoup(test_page_text, "html.parser").prettify()
+
+    with requests_mock.Mocker() as m:
+        m.get(url, text=test_page_text)  # Подмена запроса
+
+        logger.info("Downloading: %s", url)
+        file_path = download(url, temp_dir)
+        logger.info("Saved to: %s", file_path)
+
+        # Проверка, что файл создан и корректен
         assert os.path.exists(file_path)
+        assert file_path == expected_filename
+
+        # Проверка содержимого файла
+        with open(file_path, encoding="utf-8") as file:
+            assert file.read() == expected_html
+
+        # Проверка, что requests.get(url) был вызван ОДИН раз
+        assert len(m.request_history) == 1
+        # Проверка, что запрос был сделан по нужному URL
+        assert m.request_history[0].url == url
+        # Проверка, что это именно GET-запрос
+        assert m.request_history[0].method == "GET"
 
 
-def test_image_asset_exist(tmp_path):
-    temp = str(tmp_path)
-    download(
-        url='https://en.wikipedia.org/wiki/Robert_II_of_Scotland',
-        output=temp)
-    expected_assets_dir_path = (
-        os.path.join(temp,
-                     'en-wikipedia-org-wiki-Robert-II-of-Scotland_files'))
-    file_path = (
-        os.path.join(expected_assets_dir_path,
-        'en-wikipedia-org-static-apple-touch-wikipedia.png'))
-    assert os.path.exists(file_path)
+def test_download_with_images(tmp_path):
+    """Проверка скачивания изображений и замены ссылок"""
+    url = "https://ru.hexlet.io/courses"
+    html_content = '''
+    <html>
+      <body>
+        <img src="/assets/professions/python.png" />
+      </body>
+    </html>
+    '''
+    img_url = "https://ru.hexlet.io/assets/professions/python.png"
+    # Загружаем реальную картинку из fixtures
+    real_image_path = Path("tests/fixtures/python.png")
+    img_content = real_image_path.read_bytes()
 
+    expected_img_filename = "ru-hexlet-io-assets-professions-python.png"
+    expected_img_path = os.path.join(tmp_path, "ru-hexlet-io-courses_files", expected_img_filename)
+    expected_html_path = os.path.join(tmp_path, "ru-hexlet-io-courses.html")
 
-# Positive: All assets hrefs changed to local paths
-def test_assets_href_change(tmp_path):
-    temp = str(tmp_path)
-    tags = {"img": "src",
-            "link": "href",
-            "script": "src"}
-    extensions = [".png", ".jpeg"]
+    with requests_mock.Mocker() as m:
+        m.get(url, text=html_content)
+        m.get(img_url, content=img_content)
 
-    file_path = download(url='https://ru.hexlet.io/courses', output=temp)
-    with open(file_path, 'r', encoding="utf-8") as f:
-        html = f.read()
-        soup = BeautifulSoup(html, "html.parser")
-        for tag_type, attribute in tags.items():
-            asset_tags = soup.find_all(tag_type)
-            for tag in asset_tags:
-                if tag.has_attr(attribute):
-                    parsed_url = urlparse(tag[attribute])
-                    if parsed_url.netloc == HOST or parsed_url.netloc == '':
-                        root, file_extension = os.path.splitext(tag[attribute])
-                        if file_extension in extensions:
-                            assert 'ru-hexlet-io-courses_files' in root
-                            assert 'http' not in root
+        file_path = download(url, tmp_path)
 
+        logger.info(f"Проверка: HTML сохранён в {expected_html_path}")
+        assert os.path.exists(expected_html_path)
+        assert file_path == expected_html_path
 
-# Compare assets content with etalon
-def test_check_asset_content(tmp_path):
-    temp = str(tmp_path)
-    download(url='https://ru.hexlet.io/courses', output=temp)
-    expected_assets_dir_path = os.path.join(temp, 'ru-hexlet-io-courses_files')
-    existing_files = set(os.listdir(expected_assets_dir_path))
-    for file_ in existing_files:
-        root, file_extension = os.path.splitext(file_)
-        expected_path = os.path.join(expected_assets_dir_path, file_)
-        actual_path = (
-            f'{os.path.dirname(__file__)}/fixtures/test_check_asset_content/'
-            f'{root}-etalon{file_extension}')
-        with (open(expected_path, encoding='UTF-8') as actual_file,
-              open(actual_path, encoding='UTF-8') as etalon_file):
-            actual_content = actual_file.read()
-            etalon_content = etalon_file.read()
-            similarity = difflib.SequenceMatcher(None,
-                                                 actual_content,
-                                                 etalon_content).ratio()
-            if similarity < 0.95:
-                diff = "\n".join(
-                    difflib.unified_diff(
-                        etalon_content.splitlines(),
-                        actual_content.splitlines(),
-                        fromfile='expected',
-                        tofile='actual',
-                        lineterm=''
-                    )
-                )
-                assert False, (
-                    f"Asset {file_} similarity with etalon = {similarity:.2%}."
-                    f" Must be >= 0.95.\nDiff:\n{diff}")
+        logger.info(f"Проверка: изображение сохранено в {expected_img_path}")
+        assert os.path.exists(expected_img_path)
 
+        logger.info("Проверка: файл совпадает с оригиналом")
+        downloaded_image = Path(expected_img_path).read_bytes()
+        assert downloaded_image == img_content
 
-# Negative: Unreal URL
-def test_unreal_url(tmp_path):
-    temp = str(tmp_path)
-    with pytest.raises(Exception):
-        download(url='https://ru.hexlet.io/lol',
-                 output=temp)
-
-
-# Negative: Unreal output folder
-def test_output_path_not_exist():
-    unexpected_path = 'файл/'
-    with pytest.raises(FileNotFoundError):
-        download(url='https://ru.hexlet.io/webinars',
-                 output=unexpected_path)
-
-
-# Negative: Incorrect folder type
-def test_incorrect_output_type():
-    with pytest.raises(TypeError):
-        download(url='https://ru.hexlet.io/webinars',
-                 output=1)
-
-
-def test_local_html_without_requests_get(monkeypatch, tmp_path):
-    temp = str(tmp_path)
-
-    def fake_get(url):
-        class FakeResponse:
-            def __init__(self, text):
-                self.text = text
-
-            def ok(self):
-                return bool(self)
-
-        path_to_fixture = (
-            os.path.join(os.path.dirname(__file__),
-                         'fixtures/test_local_html_without_requests_get/'
-                         'localhost-blog-about.html'))
-        with open(path_to_fixture, 'r', encoding='UTF-8') as site:
-            response = site.read()
-        return FakeResponse(response)
-
-    monkeypatch.setattr(requests, "get", fake_get)
-    download(url='http://localhost/blog/about', output=temp)
+        with open(expected_html_path, encoding="utf-8") as file:
+            html = file.read()
+            logger.info("Проверка: заменена ли ссылка на локальное изображение в HTML")
+            assert f'src="ru-hexlet-io-courses_files/{expected_img_filename}"' in html
