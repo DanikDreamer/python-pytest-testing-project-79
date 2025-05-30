@@ -1,3 +1,1 @@
-from .page_loader import download
-
-__all__ = ["download"]
+from page_loader.page import download  # noqa: F401

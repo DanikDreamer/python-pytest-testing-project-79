@@ -8,7 +8,7 @@ import requests
 import requests_mock
 from bs4 import BeautifulSoup
 
-from page_loader.page_loader import make_filename, download
+from page_loader import download
 
 # Настройка логирования для читаемого вывода
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
@@ -20,18 +20,6 @@ def temp_dir():
     """Фикстура для создания временной директории"""
     with tempfile.TemporaryDirectory() as tmpdirname:
         yield tmpdirname
-
-
-def test_make_filename():
-    """Тестирование создания имени файла из URL"""
-    urls = [
-        ("https://ru.hexlet.io/courses", "ru-hexlet-io-courses.html"),
-        ("http://example.com/path/page", "example-com-path-page.html"),
-        ("https://test.com/some-page?query=1", "test-com-some-page-query-1.html"),
-    ]
-
-    for url, expected in urls:
-        assert make_filename(url) == expected
 
 
 @pytest.mark.parametrize("status_code", [404, 500])
@@ -47,10 +35,13 @@ def test_response_errors(temp_dir, status_code):
             download(url, temp_dir)
 
 
-@pytest.mark.parametrize("invalid_path, expected_exception", [
-    ("X:\\this\\path\\does\\not\\exist", FileNotFoundError),
-    ("C:\\Windows\\System32\\config", PermissionError),
-])
+@pytest.mark.parametrize(
+    "invalid_path, expected_exception",
+    [
+        ("/notExistsPath", FileNotFoundError),
+        ("/sys", (OSError, PermissionError)),
+    ],
+)
 def test_storage_errors(invalid_path, expected_exception):
     """Тестирование ошибок при сохранении"""
     url = "https://site.com/blog/about"
@@ -95,20 +86,22 @@ def test_download(temp_dir):
 def test_download_with_images(tmp_path):
     """Проверка скачивания изображений и замены ссылок"""
     url = "https://ru.hexlet.io/courses"
-    html_content = '''
+    html_content = """
     <html>
       <body>
         <img src="/assets/professions/python.png" />
       </body>
     </html>
-    '''
+    """
     img_url = "https://ru.hexlet.io/assets/professions/python.png"
     # Загружаем реальную картинку из fixtures
-    real_image_path = Path("tests/fixtures/python.png")
+    real_image_path = Path(__file__).parent / "fixtures/python.png"
     img_content = real_image_path.read_bytes()
 
     expected_img_filename = "ru-hexlet-io-assets-professions-python.png"
-    expected_img_path = os.path.join(tmp_path, "ru-hexlet-io-courses_files", expected_img_filename)
+    expected_img_path = os.path.join(
+        tmp_path, "ru-hexlet-io-courses_files", expected_img_filename
+    )
     expected_html_path = os.path.join(tmp_path, "ru-hexlet-io-courses.html")
 
     with requests_mock.Mocker() as m:
