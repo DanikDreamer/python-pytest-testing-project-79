@@ -9,11 +9,7 @@ packages = [
 [project]
 name = "hexlet-code"
 version = "0.1.5"
-dependencies = [
-    "bs4",
- "pytest_asyncio",
- "validators>=0.35.0",
-]
+dependencies = ["bs4", "pytest_asyncio"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
