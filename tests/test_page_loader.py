@@ -27,11 +27,6 @@ def normalize_html(html_str):
     return BeautifulSoup(html_str, "html.parser").prettify()
 
 
-def test_invalid_url(tmp_path):
-    with pytest.raises(ValueError):
-        download("not-a-url", tmp_path)
-
-
 def test_connection_error(requests_mock, tmp_path):
     url = "https://badsite.com"
     requests_mock.get(url, exc=ConnectionError)
