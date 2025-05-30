@@ -11,9 +11,8 @@ name = "hexlet-code"
 version = "0.1.5"
 dependencies = [
     "bs4",
-    "dotenv>=0.9.9",
-    "pytest_asyncio",
-    "validators>=0.35.0",
+ "pytest_asyncio",
+ "validators>=0.35.0",
 ]
 
 [tool.poetry.dependencies]
