@@ -77,6 +77,7 @@ def test_page_load(requests_mock, tmp_path):
     actual_html = read(html_path)
     expected_html = read(get_test_data_path("after.html"))
 
+    assert html_path == f"{tmp_path}/ru-hexlet-io-courses.html"
     assert tmp_path in Path(html_path).parents
     assert normalize_html(actual_html) == normalize_html(expected_html)
 
